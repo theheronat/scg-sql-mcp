@@ -1,172 +1,332 @@
 # Azure SQL MCP Server
 
-Data API Builder (DAB) MCP Server สำหรับเข้าถึงข้อมูล Azure SQL Database ผ่าน REST API, GraphQL และ MCP Protocol
+A Model Context Protocol (MCP) server for Azure SQL Database using Data API Builder (DAB). Exposes your SQL database through REST API, GraphQL, and MCP protocol for AI agents like Microsoft Copilot Studio, Claude, and more.
 
-## 📋 สารบัญ
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Azure](https://img.shields.io/badge/Azure-Deployed-blue)](https://azure.microsoft.com)
 
+## 🚀 Features
+
+- **Multiple Protocols**: REST API, GraphQL, and MCP (Model Context Protocol)
+- **Zero Code**: Configure your database access with JSON configuration
+- **AI Agent Ready**: Direct integration with Copilot Studio, Claude Desktop, and other AI platforms
+- **Azure Native**: Deploys seamlessly to Azure App Service or Container Apps
+- **Production Ready**: Built on Microsoft's Data API Builder with enterprise features
+
+## 📋 Table of Contents
+
+- [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
-- [โครงสร้างโปรเจค](#โครงสร้างโปรเจค)
-- [การตั้งค่าเบื้องต้น](#การตั้งค่าเบื้องต้น)
-- [การรันแบบ Local](#การรันแบบ-local)
-- [การ Deploy ไปยัง Azure](#การ-deploy-ไปยัง-azure)
-  - [Deploy to Container Apps](#1-deploy-to-azure-container-apps)
-  - [Deploy to App Service](#2-deploy-to-azure-app-service)
-- [การทดสอบ](#การทดสอบ)
-- [ตัวอย่าง Query](#ตัวอย่าง-query)
+- [Quick Start](#quick-start)
+- [Local Development](#local-development)
+- [Azure Deployment](#azure-deployment)
+  - [Option 1: Azure App Service](#option-1-azure-app-service-recommended)
+  - [Option 2: Azure Container Apps](#option-2-azure-container-apps)
+- [Testing](#testing)
+- [Configuration](#configuration)
+- [Troubleshooting](#troubleshooting)
+- [Resources](#resources)
 
----
+## 🏗️ Architecture
+
+```
+┌─────────────────┐
+│   AI Agents     │  (Copilot Studio, Claude, etc.)
+│  - Copilot      │
+│  - Claude       │
+└────────┬────────┘
+         │ MCP Protocol
+         ▼
+┌─────────────────┐
+│   DAB Server    │  (This Project)
+│  - REST API     │  Port 5000
+│  - GraphQL      │
+│  - MCP Protocol │
+└────────┬────────┘
+         │ SQL Queries
+         ▼
+┌─────────────────┐
+│ Azure SQL DB    │
+│  - UserInfo     │
+│  - Other Tables │
+└─────────────────┘
+```
 
 ## Prerequisites
 
-### ติดตั้ง .NET SDK
+### Required
+- **Azure Subscription** with permissions to create resources
+- **Azure SQL Database** with connection string
+- **Azure CLI** installed ([Install guide](https://docs.microsoft.com/cli/azure/install-azure-cli))
+- **.NET SDK 8 or 9** ([Download](https://dotnet.microsoft.com/download))
+
+### Optional
+- **Docker Desktop** (for local container testing)
+- **Postman** (for API testing)
+- **Git** (for version control)
+
+### Install Prerequisites (macOS)
 
 ```bash
-# macOS (Homebrew)
-brew install dotnet@8
-brew install dotnet@9
+# Install Homebrew (if not installed)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# เพิ่ม .NET ใน PATH
+# Install required tools
+brew install azure-cli dotnet@8
+
+# Add .NET to PATH
 echo 'export PATH="/opt/homebrew/opt/dotnet@8/bin:$PATH"' >> ~/.zshrc
-echo 'export PATH="/opt/homebrew/opt/dotnet@9/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
-```
 
-### ติดตั้ง Azure CLI
+# Verify installations
+az --version
+dotnet --version
 
-```bash
-# macOS
-brew install azure-cli
-
-# เข้าสู่ระบบ Azure
+# Login to Azure
 az login
 ```
 
-### ติดตั้ง Docker Desktop (Optional)
+### Install Prerequisites (Windows)
 
-ดาวน์โหลดจาก: https://www.docker.com/products/docker-desktop/
+```powershell
+# Install using winget
+winget install Microsoft.AzureCLI
+winget install Microsoft.DotNet.SDK.8
 
----
+# Verify installations
+az --version
+dotnet --version
 
-## โครงสร้างโปรเจค
-
-```
-az-sql-mcp-server/
-├── dab-config.json         # Data API Builder configuration
-├── Dockerfile              # Docker image definition
-├── .env                    # Environment variables (ห้าม commit!)
-├── .config/
-│   └── dotnet-tools.json   # .NET local tools manifest
-└── README.md               # เอกสารนี้
+# Login to Azure
+az login
 ```
 
----
+## Quick Start
 
-## การตั้งค่าเบื้องต้น
-
-### 1. Clone/Setup โปรเจค
+### 1. Clone and Setup
 
 ```bash
-cd az-sql-mcp-server
-```
+# Clone the repository
+git clone https://github.com/theheronat/scg-sql-mcp.git
+cd scg-sql-mcp
 
-### 2. สร้าง .NET Tool Manifest
-
-```bash
-dotnet new tool-manifest
-```
-
-### 3. ติดตั้ง Data API Builder
-
-```bash
+# Restore .NET tools
 dotnet tool restore
 ```
 
-### 4. สร้างไฟล์ .env
+### 2. Configure Database Connection
 
-สร้างไฟล์ `.env` ในโฟลเดอร์ root:
+Create a `.env` file in the project root:
 
 ```env
-MSSQL_CONNECTION_STRING=Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DATABASE;Persist Security Info=False;User ID=YOUR_USERNAME;Password=YOUR_PASSWORD;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
+MSSQL_CONNECTION_STRING=Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DATABASE;User ID=YOUR_USERNAME;Password=YOUR_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
 ```
 
-**⚠️ สำคัญ:** อย่าลืมเพิ่ม `.env` เข้าไปใน `.gitignore`
+**Important:** Never commit `.env` to Git (already in `.gitignore`)
 
----
-
-## การรันแบบ Local
-
-### เริ่ม DAB Server
+### 3. Test Locally
 
 ```bash
+# Start the DAB server
 dotnet dab start --config dab-config.json
 ```
 
-Server จะทำงานที่ `http://localhost:5000`
+Server runs at `http://localhost:5000`
 
-### Endpoints ที่ใช้ได้
+**Endpoints:**
+- REST API: `http://localhost:5000/api`
+- GraphQL: `http://localhost:5000/graphql`
+- MCP: `http://localhost:5000/mcp`
 
-- **REST API:** http://localhost:5000/api
-- **GraphQL:** http://localhost:5000/graphql
-- **MCP:** http://localhost:5000/mcp
-
-### ทดสอบ Local
+### 4. Quick Test
 
 ```bash
-# ทดสอบ GraphQL
+# Test GraphQL endpoint
 curl -X POST http://localhost:5000/graphql \
   -H "Content-Type: application/json" \
   -d '{"query":"{ userInfos(first: 5) { items { DisplayName Mail } } }"}'
 ```
 
----
+## Local Development
 
-## การ Deploy ไปยัง Azure
-
-### 1. Deploy to Azure Container Apps
-
-#### 1.1 สร้าง Container Registry (ถ้ายังไม่มี)
+### Run with Live Reload
 
 ```bash
-RESOURCE_GROUP="BMG-OpenAI"
-REGISTRY_NAME="bmgcontainer"
+dotnet watch dab start --config dab-config.json
+```
 
+### Test Different Endpoints
+
+```bash
+# GraphQL Query
+curl -X POST http://localhost:5000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ userInfos { items { DisplayName Mail MainLicense } } }"}'
+
+# REST API (OData)
+curl "http://localhost:5000/api/UserInfo"
+
+# MCP Tools List
+curl -X POST http://localhost:5000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"method":"tools/list"}'
+```
+
+## Azure Deployment
+
+### Option 1: Azure App Service (Recommended)
+
+Best for production workloads with predictable traffic.
+
+#### Step 1: Set Variables
+
+```bash
+# Configuration
+export RESOURCE_GROUP="your-resource-group"
+export LOCATION="southeastasia"
+export PLAN_NAME="sql-mcp-plan"
+export WEBAPP_NAME="sql-mcp-appservice"
+export REGISTRY_NAME="yourregistryname"  # Must be globally unique
+export CONNECTION_STRING="Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DATABASE;User ID=YOUR_USERNAME;Password=YOUR_PASSWORD;Encrypt=True;"
+```
+
+#### Step 2: Create Resources
+
+```bash
+# Create resource group
+az group create \
+  --name $RESOURCE_GROUP \
+  --location $LOCATION
+
+# Create Container Registry
 az acr create \
   --name $REGISTRY_NAME \
   --resource-group $RESOURCE_GROUP \
   --sku Basic \
-  --location "Southeast Asia"
+  --admin-enabled true
+
+# Create App Service Plan (Linux)
+az appservice plan create \
+  --name $PLAN_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --is-linux \
+  --sku B1 \
+  --location $LOCATION
 ```
 
-#### 1.2 Build และ Push Image
+**SKU Options:**
+- `B1` - Basic ($13/month) - Development/Testing
+- `P1v2` - Premium ($73/month) - Production
+- `P2v2` - Premium ($146/month) - High Performance
+
+#### Step 3: Build and Push Container
 
 ```bash
-# Build image บน Azure (ไม่ต้องใช้ Docker local)
+# Build on Azure (no local Docker needed)
 az acr build \
   --registry $REGISTRY_NAME \
   --image sql-mcp-server:latest \
   --file Dockerfile .
 ```
 
-#### 1.3 สร้าง Container Apps Environment (ถ้ายังไม่มี)
+#### Step 4: Create Web App
 
 ```bash
-ENV_NAME="sql-mcp-env"
+# Create web app
+az webapp create \
+  --name $WEBAPP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --plan $PLAN_NAME \
+  --deployment-container-image-name $REGISTRY_NAME.azurecr.io/sql-mcp-server:latest
 
+# Get ACR credentials
+export ACR_USERNAME=$(az acr credential show --name $REGISTRY_NAME --query username -o tsv)
+export ACR_PASSWORD=$(az acr credential show --name $REGISTRY_NAME --query "passwords[0].value" -o tsv)
+
+# Configure container registry
+az webapp config container set \
+  --name $WEBAPP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --docker-custom-image-name $REGISTRY_NAME.azurecr.io/sql-mcp-server:latest \
+  --docker-registry-server-url https://$REGISTRY_NAME.azurecr.io \
+  --docker-registry-server-user $ACR_USERNAME \
+  --docker-registry-server-password "$ACR_PASSWORD"
+
+# Configure environment
+az webapp config appsettings set \
+  --name $WEBAPP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --settings \
+    WEBSITES_PORT=5000 \
+    MSSQL_CONNECTION_STRING="$CONNECTION_STRING"
+
+# Restart to apply changes
+az webapp restart \
+  --name $WEBAPP_NAME \
+  --resource-group $RESOURCE_GROUP
+```
+
+#### Step 5: Get URL and Test
+
+```bash
+# Display URL
+echo "🚀 Your MCP Server: https://$WEBAPP_NAME.azurewebsites.net"
+
+# Test deployment
+curl -X POST https://$WEBAPP_NAME.azurewebsites.net/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ __typename }"}'
+```
+
+### Option 2: Azure Container Apps
+
+Best for microservices and cost optimization (scale to zero).
+
+#### Step 1: Set Variables
+
+```bash
+export RESOURCE_GROUP="your-resource-group"
+export LOCATION="southeastasia"
+export REGISTRY_NAME="yourregistryname"
+export ENV_NAME="sql-mcp-env"
+export CONTAINERAPP_NAME="sql-mcp-server"
+export CONNECTION_STRING="Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DATABASE;User ID=YOUR_USERNAME;Password=YOUR_PASSWORD;Encrypt=True;"
+```
+
+#### Step 2: Create Resources
+
+```bash
+# Create resource group
+az group create \
+  --name $RESOURCE_GROUP \
+  --location $LOCATION
+
+# Create Container Registry
+az acr create \
+  --name $REGISTRY_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --sku Basic \
+  --admin-enabled true
+
+# Build image
+az acr build \
+  --registry $REGISTRY_NAME \
+  --image sql-mcp-server:latest \
+  --file Dockerfile .
+
+# Create Container Apps Environment
 az containerapp env create \
   --name $ENV_NAME \
   --resource-group $RESOURCE_GROUP \
-  --location "Southeast Asia"
+  --location $LOCATION
 ```
 
-#### 1.4 สร้าง Container App
+#### Step 3: Deploy Container App
 
 ```bash
-CONTAINERAPP_NAME="sql-mcp-server"
-CONNECTION_STRING="Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DATABASE;User ID=YOUR_USERNAME;Password=YOUR_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
-
 # Get ACR credentials
-ACR_USERNAME=$(az acr credential show --name $REGISTRY_NAME --query username -o tsv)
-ACR_PASSWORD=$(az acr credential show --name $REGISTRY_NAME --query "passwords[0].value" -o tsv)
+export ACR_USERNAME=$(az acr credential show --name $REGISTRY_NAME --query username -o tsv)
+export ACR_PASSWORD=$(az acr credential show --name $REGISTRY_NAME --query "passwords[0].value" -o tsv)
 
 # Create Container App
 az containerapp create \
@@ -187,436 +347,285 @@ az containerapp create \
   --memory 1.0Gi
 ```
 
-#### 1.5 ดู URL ของ Container App
+#### Step 4: Get URL and Test
 
 ```bash
-az containerapp show \
+# Get FQDN
+export MCP_URL=$(az containerapp show \
   --name $CONTAINERAPP_NAME \
   --resource-group $RESOURCE_GROUP \
-  --query "properties.configuration.ingress.fqdn" \
-  --output tsv
-```
+  --query "properties.configuration.ingress.fqdn" -o tsv)
 
-#### 1.6 Update เมื่อมีการเปลี่ยนแปลง
+echo "🚀 Your MCP Server: https://$MCP_URL"
 
-```bash
-# Build image ใหม่
-az acr build \
-  --registry $REGISTRY_NAME \
-  --image sql-mcp-server:latest \
-  --file Dockerfile .
-
-# Update Container App
-az containerapp update \
-  --name $CONTAINERAPP_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --image $REGISTRY_NAME.azurecr.io/sql-mcp-server:latest
-```
-
----
-
-### 2. Deploy to Azure App Service
-
-#### 2.1 สร้าง App Service Plan (ถ้ายังไม่มี)
-
-```bash
-RESOURCE_GROUP="BMG-CUST-SAT-RG"
-PLAN_NAME="BMG-CUST-SAT-SERVICEPLAN"
-
-az appservice plan create \
-  --name $PLAN_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --is-linux \
-  --sku P2v2 \
-  --location "Southeast Asia"
-```
-
-#### 2.2 Build และ Push Image
-
-```bash
-REGISTRY_NAME="bmgcontainer"
-
-az acr build \
-  --registry $REGISTRY_NAME \
-  --image sql-mcp-server:latest \
-  --file Dockerfile .
-```
-
-#### 2.3 สร้าง Web App
-
-```bash
-WEBAPP_NAME="sql-mcp-appservice"
-
-az webapp create \
-  --name $WEBAPP_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --plan $PLAN_NAME \
-  --deployment-container-image-name $REGISTRY_NAME.azurecr.io/sql-mcp-server:latest
-```
-
-#### 2.4 ตั้งค่า Container Registry
-
-```bash
-# Get ACR credentials
-ACR_USERNAME=$(az acr credential show --name $REGISTRY_NAME --query username -o tsv)
-ACR_PASSWORD=$(az acr credential show --name $REGISTRY_NAME --query "passwords[0].value" -o tsv)
-
-# Configure container
-az webapp config container set \
-  --name $WEBAPP_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --docker-custom-image-name $REGISTRY_NAME.azurecr.io/sql-mcp-server:latest \
-  --docker-registry-server-url https://$REGISTRY_NAME.azurecr.io \
-  --docker-registry-server-user $ACR_USERNAME \
-  --docker-registry-server-password "$ACR_PASSWORD"
-```
-
-#### 2.5 ตั้งค่า Environment Variables
-
-```bash
-CONNECTION_STRING="Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DATABASE;User ID=YOUR_USERNAME;Password=YOUR_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
-
-az webapp config appsettings set \
-  --name $WEBAPP_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --settings \
-    WEBSITES_PORT=5000 \
-    MSSQL_CONNECTION_STRING="$CONNECTION_STRING"
-```
-
-#### 2.6 Restart Web App
-
-```bash
-az webapp restart \
-  --name $WEBAPP_NAME \
-  --resource-group $RESOURCE_GROUP
-```
-
-#### 2.7 ดู URL
-
-```bash
-echo "https://$WEBAPP_NAME.azurewebsites.net"
-```
-
----
-
-## การทดสอบ
-
-### ทดสอบด้วย curl
-
-```bash
-# Replace with your actual URL
-BASE_URL="https://sql-mcp-appservice.azurewebsites.net"
-
-# Test GraphQL
-curl -X POST $BASE_URL/graphql \
+# Test
+curl -X POST https://$MCP_URL/graphql \
   -H "Content-Type: application/json" \
-  -d '{"query":"{ userInfos(first: 2) { items { DisplayName Mail } } }"}'
-
-# Test REST API (OData)
-curl "$BASE_URL/api/UserInfo?\$top=5"
-
-# Test MCP
-curl -X POST $BASE_URL/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"method":"tools/list"}'
+  -d '{"query":"{ __typename }"}'
 ```
 
-### ทดสอบด้วย Postman
-
-Import คำสั่งต่อไปนี้ใน Postman:
-
-#### GraphQL Request
-
-- **Method:** POST
-- **URL:** `https://YOUR-URL/graphql`
-- **Headers:** `Content-Type: application/json`
-- **Body (raw JSON):**
-
-```json
-{
-  "query": "{ userInfos { items { DisplayName Mail Company } } }"
-}
-```
-
----
-
-## ตัวอย่าง Query
+## Testing
 
 ### GraphQL Queries
 
-#### 1. ดูข้อมูล License ทั้งหมด
+```bash
+# Get first 5 users
+curl -X POST https://YOUR-URL/graphql \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "{ userInfos(first: 5) { items { DisplayName Mail MainLicense Company } } }"
+  }'
 
-```graphql
-{
-  userInfos {
-    items {
-      DisplayName
-      Mail
-      Licenses
-      MainLicense
-      LicenseAddin1
-      LicenseAddin2
-      CurrentLicense
-      Company
-    }
-  }
-}
+# Filter by license type
+curl -X POST https://YOUR-URL/graphql \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "{ userInfos(filter: { MainLicense: { eq: \"E3\" } }) { items { DisplayName Mail } } }"
+  }'
+
+# Search by name
+curl -X POST https://YOUR-URL/graphql \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "{ userInfos(filter: { DisplayName: { contains: \"John\" } }) { items { DisplayName Mail } } }"
+  }'
 ```
 
-#### 2. หาพนักงานที่มี E3 License
-
-```graphql
-{
-  userInfos(filter: { MainLicense: { eq: "E3" } }) {
-    items {
-      DisplayName
-      Mail
-      MainLicense
-      CurrentLicense
-      Company
-    }
-  }
-}
-```
-
-#### 3. หาคนที่มี License Addin
-
-```graphql
-{
-  userInfos(filter: { LicenseAddin1: { neq: null } }) {
-    items {
-      DisplayName
-      Mail
-      LicenseAddin1
-      LicenseAddin2
-      MainLicense
-    }
-  }
-}
-```
-
-#### 4. หาคนที่ไม่มี Current License
-
-```graphql
-{
-  userInfos(filter: { CurrentLicense: { isNull: true } }) {
-    items {
-      DisplayName
-      Mail
-      AccountEnabled
-      WhenCreated
-    }
-  }
-}
-```
-
-#### 5. ค้นหาตามชื่อ (ใช้ contains)
-
-```graphql
-{
-  userInfos(filter: { DisplayName: { contains: "Thatch" } }) {
-    items {
-      DisplayName
-      Mail
-      Company
-      MainLicense
-    }
-  }
-}
-```
-
-#### 6. Pagination
-
-```graphql
-{
-  userInfos(first: 10, after: "cursor_value") {
-    items {
-      DisplayName
-      Mail
-    }
-    endCursor
-    hasNextPage
-  }
-}
-```
-
-### REST API (OData) Queries
-
-**⚠️ Note:** DAB version 1.7.83-rc ไม่รองรับ `$top` และ `$skip` parameters ใน development mode. สำหรับ pagination แนะนำให้ใช้ GraphQL แทน
+### REST API Queries
 
 ```bash
-BASE_URL="https://YOUR-URL"
+# Get all users
+curl "https://YOUR-URL/api/UserInfo"
 
-# ดูข้อมูลทั้งหมด (ไม่ใช้ $top)
-curl "$BASE_URL/api/UserInfo"
+# Filter by license
+curl "https://YOUR-URL/api/UserInfo?\$filter=MainLicense eq 'E3'"
 
-# Filter ตาม MainLicense
-curl "$BASE_URL/api/UserInfo?\$filter=MainLicense eq 'E3'"
-
-# Select เฉพาะ fields ที่ต้องการ
-curl "$BASE_URL/api/UserInfo?\$select=DisplayName,Mail,MainLicense"
-
-# Sorting
-curl "$BASE_URL/api/UserInfo?\$orderby=DisplayName asc"
-
-# Combine multiple parameters
-curl "$BASE_URL/api/UserInfo?\$filter=MainLicense eq 'E3'&\$select=DisplayName,Mail&\$top=5"
+# Select specific fields
+curl "https://YOUR-URL/api/UserInfo?\$select=DisplayName,Mail,MainLicense"
 ```
 
----
+### MCP Protocol
 
-## Configuration Files
+```bash
+# List available tools
+curl -X POST https://YOUR-URL/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"method":"tools/list"}'
+
+# Describe entities
+curl -X POST https://YOUR-URL/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"method":"describe_entities"}'
+```
+
+### Using Postman
+
+Import the provided collection:
+
+```bash
+# Collection file is included in repository
+postman-collection.json
+```
+
+## Configuration
 
 ### dab-config.json
 
-ไฟล์หลักสำหรับตั้งค่า Data API Builder:
+Main configuration file for Data API Builder:
 
 ```json
 {
-  "$schema": "https://github.com/Azure/data-api-builder/releases/download/v1.7.86/dab.draft.schema.json",
   "data-source": {
     "database-type": "mssql",
-    "connection-string": "@env('MSSQL_CONNECTION_STRING')",
-    "options": {
-      "set-session-context": false
-    }
+    "connection-string": "@env('MSSQL_CONNECTION_STRING')"
   },
   "runtime": {
-    "rest": {
-      "enabled": true,
-      "path": "/api"
-    },
-    "graphql": {
-      "enabled": true,
-      "path": "/graphql",
-      "allow-introspection": true
-    },
-    "mcp": {
-      "enabled": true,
-      "path": "/mcp"
-    },
+    "rest": { "enabled": true, "path": "/api" },
+    "graphql": { "enabled": true, "path": "/graphql" },
+    "mcp": { "enabled": true, "path": "/mcp" },
     "host": {
-      "cors": {
-        "origins": ["*"],
-        "allow-credentials": false
-      },
-      "authentication": {
-        "provider": "StaticWebApps"
-      },
-      "mode": "development"
+      "mode": "development",
+      "authentication": { "provider": "StaticWebApps" }
     }
   },
   "entities": {
     "UserInfo": {
-      "source": {
-        "object": "dbo.UserInfo",
-        "type": "table"
-      },
-      "graphql": {
-        "enabled": true,
-        "type": {
-          "singular": "UserInfo",
-          "plural": "UserInfos"
-        }
-      },
-      "rest": {
-        "enabled": true
-      },
+      "source": { "object": "dbo.UserInfo", "type": "table" },
       "permissions": [
-        {
-          "role": "anonymous",
-          "actions": ["read"]
-        }
+        { "role": "anonymous", "actions": ["read"] }
       ]
     }
   }
 }
 ```
 
-### Dockerfile
+### Adding New Tables
 
-```dockerfile
-FROM mcr.microsoft.com/azure-databases/data-api-builder:1.7.83-rc
-COPY dab-config.json /App/dab-config.json
+See [ADD-NEW-TABLE.md](ADD-NEW-TABLE.md) for detailed instructions.
+
+Quick example:
+
+```json
+"entities": {
+  "NewTable": {
+    "source": {
+      "object": "dbo.NewTable",
+      "type": "table"
+    },
+    "permissions": [
+      {
+        "role": "anonymous",
+        "actions": ["read", "create", "update", "delete"]
+      }
+    ]
+  }
+}
 ```
-
----
 
 ## Troubleshooting
 
-### Container App Failed
-
-```bash
-# ดู logs
-az containerapp logs show \
-  --name sql-mcp-server \
-  --resource-group BMG-OpenAI \
-  --tail 50
-
-# ดู revision status
-az containerapp revision list \
-  --name sql-mcp-server \
-  --resource-group BMG-OpenAI \
-  --output table
-```
-
-### App Service Failed
-
-```bash
-# ดู logs
-az webapp log tail \
-  --name sql-mcp-appservice \
-  --resource-group BMG-CUST-SAT-RG
-
-# Restart
-az webapp restart \
-  --name sql-mcp-appservice \
-  --resource-group BMG-CUST-SAT-RG
-```
-
 ### Common Issues
 
-1. **Connection String ไม่ถูกต้อง**
-   - ตรวจสอบ username, password, server name
-   - ตรวจสอบว่า Azure SQL Firewall อนุญาต IP ของ Azure service
+**1. Connection Timeout**
 
-2. **Mode: production ไม่ทำงาน**
-   - ใช้ `mode: "development"` สำหรับ Container Apps/App Service
-   - `mode: "production"` ใช้ได้เฉพาะ Azure App Service แบบ native เท่านั้น
+```bash
+# Check SQL firewall rules
+# Add Azure service access in Azure Portal
+# Or add your IP address
+```
 
-3. **CORS Error**
-   - เพิ่ม origin ที่ต้องการใน `cors.origins` ใน dab-config.json
-   - หรือใช้ `["*"]` เพื่ออนุญาตทุก origin (development only)
+**2. Authentication Failed**
 
----
+```bash
+# Verify connection string credentials
+az webapp config appsettings list \
+  --name $WEBAPP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query "[?name=='MSSQL_CONNECTION_STRING']"
+```
+
+**3. Container Won't Start**
+
+```bash
+# Check logs (App Service)
+az webapp log tail \
+  --name $WEBAPP_NAME \
+  --resource-group $RESOURCE_GROUP
+
+# Check logs (Container Apps)
+az containerapp logs show \
+  --name $CONTAINERAPP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --tail 50
+```
+
+**4. 503 Service Unavailable**
+
+- Container is still starting (wait 1-2 minutes)
+- Check if always-on is enabled (App Service only)
+- Verify WEBSITES_PORT=5000 is set
+
+**5. GraphQL Schema Not Loading**
+
+- Verify database connection string
+- Check database permissions
+- Ensure table exists and has correct schema
+
+### Enable Detailed Logging
+
+```bash
+# App Service
+az webapp log config \
+  --name $WEBAPP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --docker-container-logging filesystem \
+  --level verbose
+```
+
+### Update Deployment
+
+```bash
+# Rebuild image
+az acr build \
+  --registry $REGISTRY_NAME \
+  --image sql-mcp-server:latest \
+  --file Dockerfile .
+
+# Restart service (App Service)
+az webapp restart \
+  --name $WEBAPP_NAME \
+  --resource-group $RESOURCE_GROUP
+
+# Update service (Container Apps)
+az containerapp update \
+  --name $CONTAINERAPP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --image $REGISTRY_NAME.azurecr.io/sql-mcp-server:latest
+```
 
 ## Resources
 
-- [Data API Builder Documentation](https://github.com/Azure/data-api-builder)
-- [Azure Container Apps Documentation](https://learn.microsoft.com/azure/container-apps/)
-- [Azure App Service Documentation](https://learn.microsoft.com/azure/app-service/)
-- [GraphQL Documentation](https://graphql.org/learn/)
+### Documentation
+- [Data API Builder GitHub](https://github.com/Azure/data-api-builder)
+- [MCP Protocol Specification](https://modelcontextprotocol.io)
+- [Azure App Service Docs](https://learn.microsoft.com/azure/app-service/)
+- [Azure Container Apps Docs](https://learn.microsoft.com/azure/container-apps/)
 
----
+### Related Guides
+- [MCP Agent Setup Guide](MCP-AGENT-SETUP.md) - Connect to AI platforms
+- [Copilot Studio Guide](COPILOT-STUDIO-GUIDE.md) - Microsoft Copilot integration
+- [Deployment Guide](DEPLOYMENT.md) - Advanced deployment scenarios
+- [Add New Table Guide](ADD-NEW-TABLE.md) - Configure additional entities
+
+### Example Queries
+See [postman-collection.json](postman-collection.json) for comprehensive examples.
+
+## Cost Estimate
+
+**Monthly costs (Southeast Asia region):**
+
+| Service | Tier | Cost (USD) |
+|---------|------|------------|
+| App Service | B1 | ~$13 |
+| App Service | P1v2 | ~$73 |
+| Container Apps | Consumption | ~$5-20 (usage-based) |
+| Container Registry | Basic | ~$5 |
+| SQL Database | Basic | ~$5 |
+| SQL Database | Standard S0 | ~$15 |
+
+**Total estimate:** $23-$98/month depending on tier selection
+
+## Security Notes
+
+- Never commit `.env` files (already in `.gitignore`)
+- Use Azure Key Vault for production secrets
+- Enable Managed Identity for SQL authentication
+- Restrict network access with firewall rules
+- Use HTTPS only (enforced by default)
+- Regularly update DAB image version
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License - see [LICENSE](LICENSE) file for details
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/theheronat/scg-sql-mcp/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/theheronat/scg-sql-mcp/discussions)
+- **Email**: your-email@example.com
+
+## Contributing
+
+Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+
+## Acknowledgments
+
+- Built with [Data API Builder](https://github.com/Azure/data-api-builder) by Microsoft
+- Implements [Model Context Protocol](https://modelcontextprotocol.io) by Anthropic
+- Hosted on Microsoft Azure
 
 ---
 
-## Contributors
-
-- **Your Team Name**
-- Contact: your-email@example.com
-
----
-
-## Version History
-
-- **v1.0.0** (2026-02-09): Initial release
-  - REST API support
-  - GraphQL support
-  - MCP support
-  - Azure deployment support
+**Version:** 1.0.0
+**Last Updated:** February 2026
+**Maintained by:** Your Team Name
