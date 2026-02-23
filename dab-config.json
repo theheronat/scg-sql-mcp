@@ -1,0 +1,182 @@
+{
+  "$schema": "https://github.com/Azure/data-api-builder/releases/download/v1.7.86/dab.draft.schema.json",
+  "data-source": {
+    "database-type": "mssql",
+    "connection-string": "@env('MSSQL_CONNECTION_STRING')",
+    "options": {
+      "set-session-context": false
+    }
+  },
+  "runtime": {
+    "rest": {
+      "enabled": true,
+      "path": "/api",
+      "request-body-strict": true
+    },
+    "graphql": {
+      "enabled": true,
+      "path": "/graphql",
+      "allow-introspection": true
+    },
+    "mcp": {
+      "enabled": true,
+      "path": "/mcp"
+    },
+    "host": {
+      "cors": {
+        "origins": ["*"],
+        "allow-credentials": false
+      },
+      "authentication": {
+        "provider": "StaticWebApps"
+      },
+      "mode": "development"
+    }
+  },
+  "entities": {
+    "UserInfo": {
+      "description": "User information with license, company, cost center, comcode billing, and business unit.",
+      "source": {
+        "object": "dbo.UserInfo",
+        "type": "table"
+      },
+      "fields": [
+        {
+          "name": "Id",
+          "description": "Id",
+          "primary-key": true
+        },
+        {
+          "name": "UserPrincipalName",
+          "description": "User principal name",
+          "primary-key": false
+        },
+        {
+          "name": "SamAccount",
+          "description": "SAM account",
+          "primary-key": false
+        },
+        {
+          "name": "Domain",
+          "description": "Domain",
+          "primary-key": false
+        },
+        {
+          "name": "DisplayName",
+          "description": "Display name",
+          "primary-key": false
+        },
+        {
+          "name": "Mail",
+          "description": "Email address",
+          "primary-key": false
+        },
+        {
+          "name": "UserType",
+          "description": "User type",
+          "primary-key": false
+        },
+        {
+          "name": "AccountEnabled",
+          "description": "Account enabled",
+          "primary-key": false
+        },
+        {
+          "name": "WhenCreated",
+          "description": "Creation date",
+          "primary-key": false
+        },
+        {
+          "name": "PasswordNeverExpires",
+          "description": "Password never expires",
+          "primary-key": false
+        },
+        {
+          "name": "DirSyncEnabled",
+          "description": "Directory sync enabled",
+          "primary-key": false
+        },
+        {
+          "name": "Licenses",
+          "description": "License list",
+          "primary-key": false
+        },
+        {
+          "name": "MainLicense",
+          "description": "Main license",
+          "primary-key": false
+        },
+        {
+          "name": "LicenseAddin1",
+          "description": "Add-in license 1",
+          "primary-key": false
+        },
+        {
+          "name": "LicenseAddin2",
+          "description": "Add-in license 2",
+          "primary-key": false
+        },
+        {
+          "name": "CurrentLicense",
+          "description": "Current license",
+          "primary-key": false
+        },
+        {
+          "name": "ComCode",
+          "description": "Company code",
+          "primary-key": false
+        },
+        {
+          "name": "PoBOX",
+          "description": "Mailbox type",
+          "primary-key": false
+        },
+        {
+          "name": "Company",
+          "description": "Company",
+          "primary-key": false
+        },
+        {
+          "name": "CostCenter",
+          "description": "Cost center",
+          "primary-key": false
+        },
+        {
+          "name": "ComcodeBilling",
+          "description": "Billing comcode",
+          "primary-key": false
+        },
+        {
+          "name": "ComcodeBillingAdjust",
+          "description": "Billing adjustment comcode",
+          "primary-key": false
+        },
+        {
+          "name": "BU",
+          "description": "Business unit",
+          "primary-key": false
+        }
+      ],
+      "graphql": {
+        "enabled": true,
+        "type": {
+          "singular": "UserInfo",
+          "plural": "UserInfos"
+        }
+      },
+      "rest": {
+        "enabled": true
+      },
+      "permissions": [
+        {
+          "role": "anonymous",
+          "actions": [
+            {
+              "action": "read"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

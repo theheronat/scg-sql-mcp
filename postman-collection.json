@@ -1,0 +1,475 @@
+{
+  "info": {
+    "name": "Azure SQL MCP Server",
+    "description": "Collection สำหรับทดสอบ MCP Server APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://sql-mcp-appservice.azurewebsites.net",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "GraphQL",
+      "item": [
+        {
+          "name": "1. Basic Query - ดูข้อมูล 5 รายการแรก",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ userInfos(first: 5) { items { DisplayName Mail Company MainLicense } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "2. License Query - หาคนที่มี E3 License",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ userInfos(filter: { MainLicense: { eq: \\\"E3\\\" } }) { items { DisplayName Mail MainLicense CurrentLicense Company } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "3. License Addin - หาคนที่มี License เสริม",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ userInfos(filter: { LicenseAddin1: { neq: null } }) { items { DisplayName Mail LicenseAddin1 LicenseAddin2 MainLicense } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "4. No License - หาคนที่ไม่มี Current License",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ userInfos(filter: { CurrentLicense: { isNull: true } }) { items { DisplayName Mail AccountEnabled WhenCreated } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "5. Full License Info - ดูข้อมูล License ทั้งหมด",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ userInfos { items { DisplayName Mail Licenses MainLicense LicenseAddin1 LicenseAddin2 CurrentLicense Company CostCenter BU } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "6. Search by Name - ค้นหาตามชื่อ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ userInfos(filter: { DisplayName: { contains: \\\"Thatch\\\" } }) { items { DisplayName Mail Company MainLicense } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "7. Company Filter - กรองตาม Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ userInfos(filter: { Company: { eq: \\\"SCG\\\" } }) { items { DisplayName Mail Company MainLicense } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "8. Active Users - หาคนที่ Account เปิดใช้งาน",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ userInfos(filter: { AccountEnabled: { eq: true } }) { items { DisplayName Mail AccountEnabled MainLicense } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "9. Pagination - แบ่งหน้า",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ userInfos(first: 10) { items { DisplayName Mail } endCursor hasNextPage } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "10. Multiple Filters - รวมหลาย Filter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ userInfos(filter: { and: [{ MainLicense: { eq: \\\"E3\\\" } }, { AccountEnabled: { eq: true } }] }) { items { DisplayName Mail MainLicense AccountEnabled } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "11. Introspection - ดู Schema",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ __schema { types { name } } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "REST API (OData)",
+      "item": [
+        {
+          "name": "1. Get All - ดูข้อมูลทั้งหมด",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/UserInfo",
+              "host": ["{{base_url}}"],
+              "path": ["api", "UserInfo"]
+            }
+          }
+        },
+        {
+          "name": "2. Select Fields - เลือกเฉพาะ fields",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/UserInfo?$select=DisplayName,Mail,MainLicense",
+              "host": ["{{base_url}}"],
+              "path": ["api", "UserInfo"],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DisplayName,Mail,MainLicense"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. Filter by License - กรองตาม MainLicense",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/UserInfo?$filter=MainLicense eq 'E3'&$select=DisplayName,Mail,MainLicense",
+              "host": ["{{base_url}}"],
+              "path": ["api", "UserInfo"],
+              "query": [
+                {
+                  "key": "$filter",
+                  "value": "MainLicense eq 'E3'"
+                },
+                {
+                  "key": "$select",
+                  "value": "DisplayName,Mail,MainLicense"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. Search by Name - ค้นหาตามชื่อ",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/UserInfo?$filter=contains(DisplayName, 'Thatch')",
+              "host": ["{{base_url}}"],
+              "path": ["api", "UserInfo"],
+              "query": [
+                {
+                  "key": "$filter",
+                  "value": "contains(DisplayName, 'Thatch')"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5. Sort by Name - เรียงตามชื่อ",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/UserInfo?$orderby=DisplayName asc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "UserInfo"],
+              "query": [
+                {
+                  "key": "$orderby",
+                  "value": "DisplayName asc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6. Count - นับจำนวน",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/UserInfo?$count=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "UserInfo"],
+              "query": [
+                {
+                  "key": "$count",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "7. Pagination - แบ่งหน้า (ใช้ GraphQL แทน)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ userInfos(first: 10) { items { DisplayName Mail MainLicense } endCursor hasNextPage } }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "8. Multiple Filters - รวมหลาย Filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/UserInfo?$filter=MainLicense eq 'E3' and AccountEnabled eq true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "UserInfo"],
+              "query": [
+                {
+                  "key": "$filter",
+                  "value": "MainLicense eq 'E3' and AccountEnabled eq true"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "MCP Protocol",
+      "item": [
+        {
+          "name": "1. Tools List - ดู Tools ที่มี",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"tools/list\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/mcp",
+              "host": ["{{base_url}}"],
+              "path": ["mcp"]
+            }
+          }
+        },
+        {
+          "name": "2. Server Info - ดูข้อมูล Server",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"server/info\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/mcp",
+              "host": ["{{base_url}}"],
+              "path": ["mcp"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "GraphQL Health",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ __typename }\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

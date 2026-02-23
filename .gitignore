@@ -1,0 +1,93 @@
+# Environment variables - NEVER commit!
+.env
+.env.local
+.env.*.local
+*.env
+
+# Azure credentials
+*.publishsettings
+*.azurePubxml
+
+# Local development
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies
+node_modules/
+packages/
+
+# Build outputs
+dist/
+build/
+out/
+bin/
+obj/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificates
+*.pfx
+*.p12
+*.key
+*.pem
+*.crt
+*.cer
+
+# Secrets and keys
+secrets/
+*.secrets
+appsettings.Development.json
+launchSettings.json
+
+# Azure Functions
+local.settings.json
+__blobstorage__/
+__queuestorage__/
+__azurite_db*__.json
+
+# Docker
+docker-compose.override.yml
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Cache
+.cache/
+*.cache
