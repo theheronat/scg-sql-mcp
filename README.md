@@ -27,6 +27,8 @@ A Model Context Protocol (MCP) server for Azure SQL Database using Data API Buil
 - [Troubleshooting](#troubleshooting)
 - [Resources](#resources)
 
+**💡 Windows Users**: See dedicated [WINDOWS-GUIDE.md](WINDOWS-GUIDE.md) for PowerShell-only commands
+
 ## 🏗️ Architecture
 
 ```
@@ -913,6 +915,7 @@ git config --global core.autocrlf true
 - [Azure Container Apps Docs](https://learn.microsoft.com/azure/container-apps/)
 
 ### Related Guides
+- [Windows Quick Start Guide](WINDOWS-GUIDE.md) - Complete PowerShell guide for Windows
 - [MCP Agent Setup Guide](MCP-AGENT-SETUP.md) - Connect to AI platforms
 - [Copilot Studio Guide](COPILOT-STUDIO-GUIDE.md) - Microsoft Copilot integration
 - [Deployment Guide](DEPLOYMENT.md) - Advanced deployment scenarios
