@@ -88,16 +88,61 @@ az login
 
 ### Install Prerequisites (Windows)
 
+#### Option 1: Using winget (Windows 10/11)
+
 ```powershell
-# Install using winget
+# Open PowerShell as Administrator
+
+# Install Azure CLI
 winget install Microsoft.AzureCLI
+
+# Install .NET SDK 8
 winget install Microsoft.DotNet.SDK.8
+
+# Install Git (if not installed)
+winget install Git.Git
+
+# Close and reopen PowerShell to refresh PATH
 
 # Verify installations
 az --version
 dotnet --version
+git --version
 
 # Login to Azure
+az login
+```
+
+#### Option 2: Manual Installation
+
+1. **Azure CLI**: Download from [aka.ms/installazurecliwindows](https://aka.ms/installazurecliwindows)
+2. **.NET SDK 8**: Download from [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0)
+3. **Git**: Download from [git-scm.com](https://git-scm.com/download/win)
+
+After installation, restart PowerShell and verify:
+
+```powershell
+az --version
+dotnet --version
+git --version
+az login
+```
+
+#### Option 3: Using Chocolatey
+
+```powershell
+# Install Chocolatey (if not installed)
+Set-ExecutionPolicy Bypass -Scope Process -Force
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# Install tools
+choco install azure-cli dotnet-8.0-sdk git -y
+
+# Verify
+az --version
+dotnet --version
+git --version
 az login
 ```
 
@@ -105,7 +150,18 @@ az login
 
 ### 1. Clone and Setup
 
+**macOS/Linux:**
 ```bash
+# Clone the repository
+git clone https://github.com/theheronat/scg-sql-mcp.git
+cd scg-sql-mcp
+
+# Restore .NET tools
+dotnet tool restore
+```
+
+**Windows (PowerShell):**
+```powershell
 # Clone the repository
 git clone https://github.com/theheronat/scg-sql-mcp.git
 cd scg-sql-mcp
@@ -118,6 +174,22 @@ dotnet tool restore
 
 Create a `.env` file in the project root:
 
+**macOS/Linux:**
+```bash
+cat > .env << 'EOF'
+MSSQL_CONNECTION_STRING=Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DATABASE;User ID=YOUR_USERNAME;Password=YOUR_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
+EOF
+```
+
+**Windows (PowerShell):**
+```powershell
+# Create .env file
+@"
+MSSQL_CONNECTION_STRING=Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DATABASE;User ID=YOUR_USERNAME;Password=YOUR_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
+"@ | Out-File -FilePath .env -Encoding utf8
+```
+
+**Or manually create `.env` file with:**
 ```env
 MSSQL_CONNECTION_STRING=Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DATABASE;User ID=YOUR_USERNAME;Password=YOUR_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
 ```
@@ -127,7 +199,7 @@ MSSQL_CONNECTION_STRING=Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial
 ### 3. Test Locally
 
 ```bash
-# Start the DAB server
+# Start the DAB server (same for Windows/Mac/Linux)
 dotnet dab start --config dab-config.json
 ```
 
@@ -140,11 +212,32 @@ Server runs at `http://localhost:5000`
 
 ### 4. Quick Test
 
+**macOS/Linux:**
 ```bash
 # Test GraphQL endpoint
 curl -X POST http://localhost:5000/graphql \
   -H "Content-Type: application/json" \
   -d '{"query":"{ userInfos(first: 5) { items { DisplayName Mail } } }"}'
+```
+
+**Windows (PowerShell):**
+```powershell
+# Test GraphQL endpoint
+$body = @{
+    query = "{ userInfos(first: 5) { items { DisplayName Mail } } }"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:5000/graphql" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+```
+
+**Windows (curl - if installed):**
+```powershell
+curl -X POST http://localhost:5000/graphql `
+  -H "Content-Type: application/json" `
+  -d '{\"query\":\"{ userInfos(first: 5) { items { DisplayName Mail } } }\"}'
 ```
 
 ## Local Development
@@ -180,6 +273,7 @@ Best for production workloads with predictable traffic.
 
 #### Step 1: Set Variables
 
+**macOS/Linux (Bash):**
 ```bash
 # Configuration
 export RESOURCE_GROUP="your-resource-group"
@@ -190,8 +284,20 @@ export REGISTRY_NAME="yourregistryname"  # Must be globally unique
 export CONNECTION_STRING="Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DATABASE;User ID=YOUR_USERNAME;Password=YOUR_PASSWORD;Encrypt=True;"
 ```
 
+**Windows (PowerShell):**
+```powershell
+# Configuration
+$RESOURCE_GROUP = "your-resource-group"
+$LOCATION = "southeastasia"
+$PLAN_NAME = "sql-mcp-plan"
+$WEBAPP_NAME = "sql-mcp-appservice"
+$REGISTRY_NAME = "yourregistryname"  # Must be globally unique
+$CONNECTION_STRING = "Server=tcp:YOUR_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DATABASE;User ID=YOUR_USERNAME;Password=YOUR_PASSWORD;Encrypt=True;"
+```
+
 #### Step 2: Create Resources
 
+**macOS/Linux (Bash):**
 ```bash
 # Create resource group
 az group create \
@@ -214,6 +320,29 @@ az appservice plan create \
   --location $LOCATION
 ```
 
+**Windows (PowerShell):**
+```powershell
+# Create resource group
+az group create `
+  --name $RESOURCE_GROUP `
+  --location $LOCATION
+
+# Create Container Registry
+az acr create `
+  --name $REGISTRY_NAME `
+  --resource-group $RESOURCE_GROUP `
+  --sku Basic `
+  --admin-enabled true
+
+# Create App Service Plan (Linux)
+az appservice plan create `
+  --name $PLAN_NAME `
+  --resource-group $RESOURCE_GROUP `
+  --is-linux `
+  --sku B1 `
+  --location $LOCATION
+```
+
 **SKU Options:**
 - `B1` - Basic ($13/month) - Development/Testing
 - `P1v2` - Premium ($73/month) - Production
@@ -221,6 +350,7 @@ az appservice plan create \
 
 #### Step 3: Build and Push Container
 
+**macOS/Linux (Bash):**
 ```bash
 # Build on Azure (no local Docker needed)
 az acr build \
@@ -229,8 +359,18 @@ az acr build \
   --file Dockerfile .
 ```
 
+**Windows (PowerShell):**
+```powershell
+# Build on Azure (no local Docker needed)
+az acr build `
+  --registry $REGISTRY_NAME `
+  --image sql-mcp-server:latest `
+  --file Dockerfile .
+```
+
 #### Step 4: Create Web App
 
+**macOS/Linux (Bash):**
 ```bash
 # Create web app
 az webapp create \
@@ -266,8 +406,45 @@ az webapp restart \
   --resource-group $RESOURCE_GROUP
 ```
 
+**Windows (PowerShell):**
+```powershell
+# Create web app
+az webapp create `
+  --name $WEBAPP_NAME `
+  --resource-group $RESOURCE_GROUP `
+  --plan $PLAN_NAME `
+  --deployment-container-image-name "$REGISTRY_NAME.azurecr.io/sql-mcp-server:latest"
+
+# Get ACR credentials
+$ACR_USERNAME = az acr credential show --name $REGISTRY_NAME --query username -o tsv
+$ACR_PASSWORD = az acr credential show --name $REGISTRY_NAME --query "passwords[0].value" -o tsv
+
+# Configure container registry
+az webapp config container set `
+  --name $WEBAPP_NAME `
+  --resource-group $RESOURCE_GROUP `
+  --docker-custom-image-name "$REGISTRY_NAME.azurecr.io/sql-mcp-server:latest" `
+  --docker-registry-server-url "https://$REGISTRY_NAME.azurecr.io" `
+  --docker-registry-server-user $ACR_USERNAME `
+  --docker-registry-server-password $ACR_PASSWORD
+
+# Configure environment
+az webapp config appsettings set `
+  --name $WEBAPP_NAME `
+  --resource-group $RESOURCE_GROUP `
+  --settings `
+    WEBSITES_PORT=5000 `
+    MSSQL_CONNECTION_STRING="$CONNECTION_STRING"
+
+# Restart to apply changes
+az webapp restart `
+  --name $WEBAPP_NAME `
+  --resource-group $RESOURCE_GROUP
+```
+
 #### Step 5: Get URL and Test
 
+**macOS/Linux (Bash):**
 ```bash
 # Display URL
 echo "🚀 Your MCP Server: https://$WEBAPP_NAME.azurewebsites.net"
@@ -276,6 +453,19 @@ echo "🚀 Your MCP Server: https://$WEBAPP_NAME.azurewebsites.net"
 curl -X POST https://$WEBAPP_NAME.azurewebsites.net/graphql \
   -H "Content-Type: application/json" \
   -d '{"query":"{ __typename }"}'
+```
+
+**Windows (PowerShell):**
+```powershell
+# Display URL
+Write-Host "🚀 Your MCP Server: https://$WEBAPP_NAME.azurewebsites.net"
+
+# Test deployment
+$body = @{ query = "{ __typename }" } | ConvertTo-Json
+Invoke-RestMethod -Uri "https://$WEBAPP_NAME.azurewebsites.net/graphql" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
 ```
 
 ### Option 2: Azure Container Apps
@@ -368,6 +558,7 @@ curl -X POST https://$MCP_URL/graphql \
 
 ### GraphQL Queries
 
+**macOS/Linux (Bash):**
 ```bash
 # Get first 5 users
 curl -X POST https://YOUR-URL/graphql \
@@ -391,8 +582,42 @@ curl -X POST https://YOUR-URL/graphql \
   }'
 ```
 
+**Windows (PowerShell):**
+```powershell
+# Get first 5 users
+$body = @{
+    query = "{ userInfos(first: 5) { items { DisplayName Mail MainLicense Company } } }"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "https://YOUR-URL/graphql" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+
+# Filter by license type
+$body = @{
+    query = "{ userInfos(filter: { MainLicense: { eq: \`"E3\`" } }) { items { DisplayName Mail } } }"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "https://YOUR-URL/graphql" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+
+# Search by name
+$body = @{
+    query = "{ userInfos(filter: { DisplayName: { contains: \`"John\`" } }) { items { DisplayName Mail } } }"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "https://YOUR-URL/graphql" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+```
+
 ### REST API Queries
 
+**macOS/Linux (Bash):**
 ```bash
 # Get all users
 curl "https://YOUR-URL/api/UserInfo"
@@ -404,8 +629,21 @@ curl "https://YOUR-URL/api/UserInfo?\$filter=MainLicense eq 'E3'"
 curl "https://YOUR-URL/api/UserInfo?\$select=DisplayName,Mail,MainLicense"
 ```
 
+**Windows (PowerShell):**
+```powershell
+# Get all users
+Invoke-RestMethod -Uri "https://YOUR-URL/api/UserInfo"
+
+# Filter by license
+Invoke-RestMethod -Uri "https://YOUR-URL/api/UserInfo?`$filter=MainLicense eq 'E3'"
+
+# Select specific fields
+Invoke-RestMethod -Uri "https://YOUR-URL/api/UserInfo?`$select=DisplayName,Mail,MainLicense"
+```
+
 ### MCP Protocol
 
+**macOS/Linux (Bash):**
 ```bash
 # List available tools
 curl -X POST https://YOUR-URL/mcp \
@@ -416,6 +654,23 @@ curl -X POST https://YOUR-URL/mcp \
 curl -X POST https://YOUR-URL/mcp \
   -H "Content-Type: application/json" \
   -d '{"method":"describe_entities"}'
+```
+
+**Windows (PowerShell):**
+```powershell
+# List available tools
+$body = @{ method = "tools/list" } | ConvertTo-Json
+Invoke-RestMethod -Uri "https://YOUR-URL/mcp" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+
+# Describe entities
+$body = @{ method = "describe_entities" } | ConvertTo-Json
+Invoke-RestMethod -Uri "https://YOUR-URL/mcp" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
 ```
 
 ### Using Postman
@@ -544,6 +799,7 @@ az webapp log config \
 
 ### Update Deployment
 
+**macOS/Linux (Bash):**
 ```bash
 # Rebuild image
 az acr build \
@@ -561,6 +817,91 @@ az containerapp update \
   --name $CONTAINERAPP_NAME \
   --resource-group $RESOURCE_GROUP \
   --image $REGISTRY_NAME.azurecr.io/sql-mcp-server:latest
+```
+
+**Windows (PowerShell):**
+```powershell
+# Rebuild image
+az acr build `
+  --registry $REGISTRY_NAME `
+  --image sql-mcp-server:latest `
+  --file Dockerfile .
+
+# Restart service (App Service)
+az webapp restart `
+  --name $WEBAPP_NAME `
+  --resource-group $RESOURCE_GROUP
+
+# Update service (Container Apps)
+az containerapp update `
+  --name $CONTAINERAPP_NAME `
+  --resource-group $RESOURCE_GROUP `
+  --image "$REGISTRY_NAME.azurecr.io/sql-mcp-server:latest"
+```
+
+### Windows-Specific Troubleshooting
+
+**1. PowerShell Execution Policy Error**
+
+```powershell
+# If you get "execution policy" error
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+**2. Certificate/SSL Issues**
+
+```powershell
+# If you get SSL/TLS errors
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+```
+
+**3. .env File Encoding Issues**
+
+```powershell
+# Ensure .env file is UTF-8 without BOM
+Get-Content .env | Set-Content -Encoding UTF8 .env
+```
+
+**4. Port Already in Use**
+
+```powershell
+# Find process using port 5000
+netstat -ano | findstr :5000
+
+# Kill process (replace PID with actual process ID)
+taskkill /PID <PID> /F
+```
+
+**5. Path Issues with dotnet**
+
+```powershell
+# Add dotnet to PATH permanently
+[Environment]::SetEnvironmentVariable(
+    "Path",
+    "$env:Path;C:\Program Files\dotnet",
+    [EnvironmentVariableTarget]::User
+)
+
+# Refresh PATH in current session
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+```
+
+**6. curl Not Found**
+
+```powershell
+# Use Invoke-RestMethod instead
+$body = @{ query = "{ __typename }" } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:5000/graphql" -Method Post -ContentType "application/json" -Body $body
+
+# Or install curl via chocolatey
+choco install curl -y
+```
+
+**7. Git Line Ending Issues**
+
+```powershell
+# Configure git for Windows
+git config --global core.autocrlf true
 ```
 
 ## Resources
